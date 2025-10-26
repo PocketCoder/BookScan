@@ -1,0 +1,6 @@
+| Site               | Item Title Selector                               | Price Selector                    | Condition Selector                                | Hardback/Paperback/Format Selector                       |
+| :----------------- | :------------------------------------------------ | :-------------------------------- | :------------------------------------------------ | :------------------------------------------------------- |
+| **Amazon**         | `h2.a-size-medium.a-text-normal`                  | `span.a-price`                    | `div[data-cy="secondary-offer-recipe"]`           | `div.a-row.a-size-base.a-color-base > a`                 |
+| **eBay**           | `div.s-card__title`                               | `span.s-card__price`              | `span.s-card__subtitle`                           | Contained within `.s-card__title` or `.s-card__subtitle` |
+| **World of Books** | `.product-title` or `.card__heading` _(inferred)_ | `.price` _(inferred)_             | `.condition` or `.card__information` _(inferred)_ | `.format` or `.card__information` _(inferred)_           |
+| **AbeBooks**       | `div.result-detail h2 > a`                        | `div.result-pricing span.x-large` | `p.item-description`                              | `div.m-sm-b > span:last-child`                           |
