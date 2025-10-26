@@ -2,24 +2,30 @@
 
 import { useRouter } from 'next/navigation';
 import { BarcodeScanner } from '@/components/barcode-scanner';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-center py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-          Scan a barcode to start
-        </h1>
-        <div className="w-full max-w-md mx-auto">
-          <BarcodeScanner
-            onResult={(result) => {
-              router.push(`/scanner?barcode=${result.getText()}`);
-            }}
-          />
-        </div>
-      </main>
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
+      <Card className="w-full max-w-4xl shadow-lg rounded-lg">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-center">Book Price Scanner</CardTitle>
+          <CardDescription className="text-center">Scan a barcode or enter it manually to find book prices.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-full max-w-md aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center">
+              <BarcodeScanner
+                onResult={(result) => {
+                  router.push(`/scanner?barcode=${result.getText()}`);
+                }}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
