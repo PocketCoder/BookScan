@@ -54,8 +54,7 @@ export default function ScannerPage() {
         return `https://www.ebay.co.uk/sch/i.html?_nkw=${barcode}`;
       case "abebooks":
         return `https://www.abebooks.co.uk/servlet/SearchResults?sts=t&an=&tn=&isbn=${barcode}`;
-      case "worldofbooks":
-        return `https://www.wob.com/en-gb/search?search=${barcode}`;
+
       case "amazon":
         return `https://www.amazon.co.uk/s?k=${barcode}`;
       default:
@@ -151,39 +150,45 @@ export default function ScannerPage() {
                       <CardTitle>Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-3 gap-4">
-                      <p>
-                        Minimum Price:{" "}
-                        <a
-                          href={results.summary.minItem.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {formatPrice(results.summary.minItem.price)}
-                        </a>
-                      </p>
-                      <p>
-                        Maximum Price:{" "}
-                        <a
-                          href={results.summary.maxItem.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {formatPrice(results.summary.maxItem.price)}
-                        </a>
-                      </p>
-                      <p>
-                        Highest Price:{" "}
-                        <a
-                          href={results.summary.highestItem.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {formatPrice(results.summary.highestItem.price)}
-                        </a>
-                      </p>
+                      {results.summary.minItem && results.summary.minItem.link && (
+                        <p>
+                          Minimum Price:{" "}
+                          <a
+                            href={results.summary.minItem.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {formatPrice(results.summary.minItem.price)}
+                          </a>
+                        </p>
+                      )}
+                      {results.summary.averageItem && results.summary.averageItem.link && (
+                        <p>
+                          Average Price:{" "}
+                          <a
+                            href={results.summary.averageItem.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {formatPrice(results.summary.averageItem.price)}
+                          </a>
+                        </p>
+                      )}
+                      {results.summary.highestItem && results.summary.highestItem.link && (
+                        <p>
+                          Highest Price:{" "}
+                          <a
+                            href={results.summary.highestItem.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {formatPrice(results.summary.highestItem.price)}
+                          </a>
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -306,66 +311,7 @@ export default function ScannerPage() {
                       )}
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-2xl font-bold">
-                        World of Books
-                      </CardTitle>
-                      {scannedBarcode && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            window.open(
-                              generateSearchUrl("worldofbooks", scannedBarcode),
-                              "_blank",
-                            )
-                          }
-                        >
-                          Search World of Books
-                        </Button>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      {results.worldOfBooks.items.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Price</TableHead>
-                              <TableHead>Condition</TableHead>
-                              <TableHead>Format</TableHead>
-                              <TableHead>Link</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {results.worldOfBooks.items.map(
-                              (item: ItemData, index: number) => (
-                                <TableRow key={index}>
-                                  <TableCell>
-                                    {formatPrice(item.price)}
-                                  </TableCell>
-                                  <TableCell>{item.quality || "N/A"}</TableCell>
-                                  <TableCell>{item.format || "N/A"}</TableCell>
-                                  <TableCell>
-                                    <a
-                                      href={item.link}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      View
-                                    </a>
-                                  </TableCell>
-                                </TableRow>
-                              ),
-                            )}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <p>No World of Books items found.</p>
-                      )}
-                    </CardContent>
-                  </Card>
+
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-2xl font-bold">

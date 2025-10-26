@@ -16,11 +16,11 @@ export interface ScraperResults {
   bookDetails: BookDetails;
   ebay: { items: ItemData[] };
   abeBooks: { items: ItemData[] };
-  worldOfBooks: { items: ItemData[] };
+
   amazon: { items: ItemData[] };
   summary: {
     minItem: ItemData;
-    maxItem: ItemData;
+    averageItem: ItemData;
     highestItem: ItemData;
   };
 }
