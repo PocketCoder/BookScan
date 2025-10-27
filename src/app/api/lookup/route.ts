@@ -121,8 +121,20 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 
       const priceText = $$("span.a-price").first().text();
       const link = $$(".a-link-normal.a-text-normal").attr("href");
-      const quality = $$('div[data-cy="secondary-offer-recipe"]').text().trim();
-      const format = $$("div.a-row.a-size-base.a-color-base > a").text().trim();
+      let quality = $$('div[data-cy="secondary-offer-recipe"]').text().trim();
+      const offersDisplay = $$('span.a-declarative[data-action="show-all-offers-display"]').attr('data-show-all-offers-display');
+      if (offersDisplay) {
+        const offersData = JSON.parse(offersDisplay);
+        if (offersData.condition) {
+          quality = offersData.condition;
+        }
+      } else {
+        const truncatedConditionNote = $$('span#truncatedConditionNoteContainer span.a-truncate-full').text().trim();
+        if (truncatedConditionNote) {
+          quality = truncatedConditionNote;
+        }
+      }
+      const format = $$("span#productSubtitle").text().trim().split("–")[0]?.trim();
 
       if (priceText && link) {
         const price = parsePrice(priceText);

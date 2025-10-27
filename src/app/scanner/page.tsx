@@ -194,8 +194,8 @@ export default function ScannerPage() {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full mt-4">
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-2xl font-bold">eBay</CardTitle>
+                    <CardHeader className="flex flex-wrap items-center justify-between space-y-0 pb-2 gap-2">
+                      <CardTitle className="text-2xl font-bold text-wrap">eBay</CardTitle>
                       {scannedBarcode && (
                         <Button
                           variant="outline"
@@ -226,7 +226,7 @@ export default function ScannerPage() {
                             {results.ebay.items.map(
                               (item: ItemData, index: number) => (
                                 <TableRow key={index}>
-                                  <TableCell>
+                                  <TableCell className="whitespace-normal">
                                     {formatPrice(item.price)}
                                   </TableCell>
                                   <TableCell>{item.quality || "N/A"}</TableCell>
@@ -252,8 +252,8 @@ export default function ScannerPage() {
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-2xl font-bold">
+                    <CardHeader className="flex flex-wrap items-center justify-between space-y-0 pb-2 gap-2">
+                      <CardTitle className="text-2xl font-bold text-wrap">
                         AbeBooks
                       </CardTitle>
                       {scannedBarcode && (
@@ -286,7 +286,7 @@ export default function ScannerPage() {
                             {results.abeBooks.items.map(
                               (item: ItemData, index: number) => (
                                 <TableRow key={index}>
-                                  <TableCell>
+                                  <TableCell className="whitespace-normal">
                                     {formatPrice(item.price)}
                                   </TableCell>
                                   <TableCell>{item.quality || "N/A"}</TableCell>
@@ -313,8 +313,8 @@ export default function ScannerPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-2xl font-bold">
+                    <CardHeader className="flex flex-wrap items-center justify-between space-y-0 pb-2 gap-2">
+                      <CardTitle className="text-2xl font-bold text-wrap">
                         Amazon
                       </CardTitle>
                       {scannedBarcode && (
@@ -347,7 +347,7 @@ export default function ScannerPage() {
                             {results.amazon.items.map(
                               (item: ItemData, index: number) => (
                                 <TableRow key={index}>
-                                  <TableCell>
+                                  <TableCell className="whitespace-normal">
                                     {formatPrice(item.price)}
                                   </TableCell>
                                   <TableCell>{item.quality || "N/A"}</TableCell>
