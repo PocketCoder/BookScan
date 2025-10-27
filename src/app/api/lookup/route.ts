@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-
-import axios from "axios";
-import { load } from "cheerio";
+import Ebay from "ebay-api";
 import { ItemData, BookDetails } from "@/types";
+
+const ebay = new Ebay({
+  appId: process.env.EBAY_APP_ID,
+  certId: process.env.EBAY_CERT_ID,
+  devId: process.env.EBAY_DEV_ID,
+  countryCode: "EBAY_GB",
+});
 
 /**
  * Parses a price string into a number.
@@ -46,51 +51,41 @@ async function fetchBookDetails(barcode: string): Promise<BookDetails> {
   return {};
 }
 
-async function scrapeEbay(barcode: string): Promise<ItemData[]> {
+export async function scrapeEbay(barcode: string): Promise<ItemData[]> {
   try {
-    const searchUrl = `https://www.ebay.co.uk/sch/i.html?_nkw=${barcode}&LH_BIN=1`; // Buy It Now only
-    const { data: searchData } = await axios.get(searchUrl, { timeout: 10000 });
-
-    const $ = load(searchData);
-    const items: ItemData[] = [];
-
-    $(".s-item").each((_, el) => {
-      const $$ = load(el); // Load each item into its own cheerio instance
-
-      const title = $$("div.s-card__title").text().toLowerCase();
-      const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
-      if (isBundle) {
-        return; // Skip this item if it's a bundle
-      }
-
-      const priceText = $$("span.s-card__price").text();
-      const link = $$(".s-item__link").attr("href");
-      const quality = $$("span.s-card__subtitle").text().trim();
-      let format: string | undefined;
-
-      // Try to extract format from title or subtitle
-      if (title.includes("paperback")) {
-        format = "Paperback";
-      } else if (title.includes("hardcover")) {
-        format = "Hardcover";
-      } else if (quality.includes("paperback")) {
-        format = "Paperback";
-      } else if (quality.includes("hardcover")) {
-        format = "Hardcover";
-      }
-
-      if (priceText && link) {
-        const price = parsePrice(priceText);
-        if (!isNaN(price)) {
-          items.push({
-            price,
-            link,
-            quality: quality || undefined,
-            format: format || undefined,
-          });
-        }
-      }
+    const response = await ebay.buy.browse.search({
+      gtin: barcode,
+      limit: 10,
     });
+
+    const items: ItemData[] = (response.itemSummaries || [])
+      .filter((item) => {
+        const title = item.title?.toLowerCase() ?? "";
+        const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
+        return !isBundle;
+      })
+      .map((item) => {
+        const price = parseFloat(item.price?.value ?? "0");
+        const link = item.itemWebUrl;
+        const quality = item.condition;
+        let format: string | undefined;
+
+        const title = item.title?.toLowerCase() ?? "";
+        if (title.includes("paperback")) {
+          format = "Paperback";
+        } else if (title.includes("hardcover")) {
+          format = "Hardcover";
+        }
+
+        return {
+          price,
+          link,
+          quality: quality || undefined,
+          format: format || undefined,
+        };
+      })
+      .filter((item) => item.price > 0 && item.link);
+
     return items;
   } catch (error) {
     return handleScraperError("eBay", error);
