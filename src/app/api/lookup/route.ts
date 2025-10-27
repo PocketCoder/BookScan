@@ -3,9 +3,9 @@ import Ebay from "ebay-api";
 import { ItemData, BookDetails } from "@/types";
 
 const ebay = new Ebay({
-  appId: process.env.EBAY_APP_ID,
-  certId: process.env.EBAY_CERT_ID,
-  devId: process.env.EBAY_DEV_ID,
+  appId: process.env.APP_ID,
+  certId: process.env.CLIENT_ID,
+  devId: process.env.DEV_ID,
   countryCode: "EBAY_GB",
 });
 
@@ -27,6 +27,8 @@ function parsePrice(priceText: string): number {
 function handleScraperError(scraperName: string, error: unknown): ItemData[] {
   throw error; // Re-throw the error
 }
+
+import axios from "axios";
 
 async function fetchBookDetails(barcode: string): Promise<BookDetails> {
   try {
@@ -88,9 +90,13 @@ export async function scrapeEbay(barcode: string): Promise<ItemData[]> {
 
     return items;
   } catch (error) {
+    console.log(error);
     return handleScraperError("eBay", error);
   }
 }
+
+import axios from "axios";
+import { load } from "cheerio";
 
 async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
   try {
@@ -149,6 +155,9 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
   }
 }
 
+import axios from "axios";
+import { load } from "cheerio";
+
 async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
   try {
     const url = `https://www.worldofbooks.com/en-gb/search?q=${barcode}`;
@@ -187,6 +196,9 @@ async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
     return handleScraperError("WorldOfBooks", error);
   }
 }
+
+import axios from "axios";
+import { load } from "cheerio";
 
 async function scrapeAbeBooks(barcode: string): Promise<ItemData[]> {
   try {
