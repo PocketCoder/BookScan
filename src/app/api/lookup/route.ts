@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Ebay from "ebay-api";
+import axios from "axios";
+import { load } from "cheerio";
 import { ItemData, BookDetails } from "@/types";
 
 const ebay = new Ebay({
@@ -25,10 +27,9 @@ function parsePrice(priceText: string): number {
  * @returns An empty array of ItemData.
  */
 function handleScraperError(scraperName: string, error: unknown): ItemData[] {
+  console.log(error);
   throw error; // Re-throw the error
 }
-
-import axios from "axios";
 
 async function fetchBookDetails(barcode: string): Promise<BookDetails> {
   try {
@@ -90,13 +91,9 @@ export async function scrapeEbay(barcode: string): Promise<ItemData[]> {
 
     return items;
   } catch (error) {
-    console.log(error);
     return handleScraperError("eBay", error);
   }
 }
-
-import axios from "axios";
-import { load } from "cheerio";
 
 async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
   try {
@@ -112,12 +109,12 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
     const items: ItemData[] = [];
 
     $(".s-result-item[data-asin]").each((_, el) => {
-      const $$ = load(el); // Load each item into its own cheerio instance
+      const $$ = load(el);
 
       const title = $$("h2.a-size-medium.a-text-normal").text().toLowerCase();
       const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
       if (isBundle) {
-        return; // Skip this item if it's a bundle
+        return;
       }
 
       const priceText = $$("span.a-price").first().text();
@@ -155,9 +152,6 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
   }
 }
 
-import axios from "axios";
-import { load } from "cheerio";
-
 async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
   try {
     const url = `https://www.worldofbooks.com/en-gb/search?q=${barcode}`;
@@ -166,12 +160,12 @@ async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
     const items: ItemData[] = [];
 
     $(".product-card").each((_, el) => {
-      const $$ = load(el); // Load each item into its own cheerio instance
+      const $$ = load(el);
 
       const title = $$(".product-title").text().toLowerCase();
       const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
       if (isBundle) {
-        return; // Skip this item if it's a bundle
+        return;
       }
 
       const priceText = $$(".price").text();
@@ -196,9 +190,6 @@ async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
     return handleScraperError("WorldOfBooks", error);
   }
 }
-
-import axios from "axios";
-import { load } from "cheerio";
 
 async function scrapeAbeBooks(barcode: string): Promise<ItemData[]> {
   try {
