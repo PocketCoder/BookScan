@@ -300,6 +300,7 @@ export async function GET(request: Request) {
 
 		let minPriceItem = null;
 		let maxPriceItem = null;
+		let averagePriceItem = null;
 
 		if (allItems.length > 0) {
 			minPriceItem = allItems.reduce((prev, current) =>
@@ -308,6 +309,10 @@ export async function GET(request: Request) {
 			maxPriceItem = allItems.reduce((prev, current) =>
 				prev.price > current.price ? prev : current
 			);
+
+			const totalPrices = allItems.reduce((sum, item) => sum + item.price, 0);
+			const averagePrice = totalPrices / allItems.length;
+			averagePriceItem = { price: averagePrice, link: "#" }; // Placeholder link
 		}
 
 		const highestPriceItem = maxPriceItem;
@@ -328,7 +333,7 @@ export async function GET(request: Request) {
 			},
 			summary: {
 				minItem: minPriceItem,
-				maxItem: maxPriceItem,
+				averageItem: averagePriceItem,
 				highestItem: highestPriceItem,
 			},
 		});

@@ -20,7 +20,7 @@ export interface ScraperResults {
   amazon: { items: ItemData[] };
   summary: {
     minItem: ItemData;
-    averageItem: ItemData;
+    averageItem: ItemData | null;
     highestItem: ItemData;
   };
 }

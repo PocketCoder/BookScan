@@ -152,7 +152,7 @@ export default function ScannerPage() {
                     <CardContent className="grid grid-cols-3 gap-4">
                       {results.summary.minItem && results.summary.minItem.link && (
                         <p>
-                          Minimum Price:{" "}
+                          Lowest Price:{" "}
                           <a
                             href={results.summary.minItem.link}
                             target="_blank"
@@ -166,14 +166,7 @@ export default function ScannerPage() {
                       {results.summary.averageItem && results.summary.averageItem.link && (
                         <p>
                           Average Price:{" "}
-                          <a
-                            href={results.summary.averageItem.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {formatPrice(results.summary.averageItem.price)}
-                          </a>
+                          {formatPrice(results.summary.averageItem.price)}
                         </p>
                       )}
                       {results.summary.highestItem && results.summary.highestItem.link && (
