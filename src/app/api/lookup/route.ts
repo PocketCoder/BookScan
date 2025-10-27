@@ -4,7 +4,7 @@ import axios from 'axios';
 import { load } from 'cheerio';
 import { ItemData, BookDetails } from '@/types';
 
-const ebayApi = new eBayApi({
+export const ebayApi = new eBayApi({
 	appId: process.env.EBAY_APP_ID as string,
 	certId: process.env.EBAY_CERT_ID as string,
 	devId: process.env.EBAY_DEV_ID as string,
