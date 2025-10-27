@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
-import Ebay from "ebay-api";
-import axios from "axios";
-import { load } from "cheerio";
-import { ItemData, BookDetails } from "@/types";
+import { NextResponse } from 'next/server';
+import eBayApi from 'ebay-api';
+import axios from 'axios';
+import { load } from 'cheerio';
+import { ItemData, BookDetails } from '@/types';
 
-const ebay = new Ebay({
-  appId: process.env.APP_ID,
-  certId: process.env.CLIENT_ID,
-  devId: process.env.DEV_ID,
-  countryCode: "EBAY_GB",
+const ebayApi = new eBayApi({
+	appId: process.env.EBAY_APP_ID as string,
+	certId: process.env.EBAY_CERT_ID as string,
+	devId: process.env.EBAY_DEV_ID as string,
+	sandbox: false,
+	marketplaceId: eBayApi.MarketplaceId.EBAY_GB,
 });
 
 /**
@@ -17,7 +18,7 @@ const ebay = new Ebay({
  * @returns The parsed price as a number, or NaN if parsing fails.
  */
 function parsePrice(priceText: string): number {
-  return parseFloat(priceText.replace(/[^0-9.]+/g, ""));
+	return parseFloat(priceText.replace(/[^0-9.]+/g, ''));
 }
 
 /**
@@ -27,288 +28,317 @@ function parsePrice(priceText: string): number {
  * @returns An empty array of ItemData.
  */
 function handleScraperError(scraperName: string, error: unknown): ItemData[] {
-  console.log(error);
-  throw error; // Re-throw the error
+	console.log(error);
+	throw error; // Re-throw the error
 }
 
 async function fetchBookDetails(barcode: string): Promise<BookDetails> {
-  try {
-    const response = await axios.get(
-      `https://www.googleapis.com/books/v1/volumes?q=isbn:${barcode}`,
-      { timeout: 5000 },
-    );
-    const data = response.data;
+	try {
+		const response = await axios.get(
+			`https://www.googleapis.com/books/v1/volumes?q=isbn:${barcode}`,
+			{ timeout: 5000 }
+		);
+		const data = response.data;
 
-    if (data.items && data.items.length > 0) {
-      const volumeInfo = data.items[0].volumeInfo;
-      return {
-        title: volumeInfo.title,
-        authors: volumeInfo.authors,
-        coverImage: volumeInfo.imageLinks?.thumbnail,
-        format: volumeInfo.printType,
-      };
-    }
-  } catch (error) {
-    throw error; // Re-throw the error
-  }
-  return {};
+		if (data.items && data.items.length > 0) {
+			const volumeInfo = data.items[0].volumeInfo;
+			return {
+				title: volumeInfo.title,
+				authors: volumeInfo.authors,
+				coverImage: volumeInfo.imageLinks?.thumbnail,
+				format: volumeInfo.printType,
+			};
+		}
+	} catch (error) {
+		throw error; // Re-throw the error
+	}
+	return {};
 }
 
 export async function scrapeEbay(barcode: string): Promise<ItemData[]> {
-  try {
-    const response = await ebay.buy.browse.search({
-      gtin: barcode,
-      limit: 10,
-    });
+	try {
+		const bookDetails = await fetchBookDetails(barcode);
+		let query = barcode;
 
-    const items: ItemData[] = (response.itemSummaries || [])
-      .filter((item) => {
-        const title = item.title?.toLowerCase() ?? "";
-        const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
-        return !isBundle;
-      })
-      .map((item) => {
-        const price = parseFloat(item.price?.value ?? "0");
-        const link = item.itemWebUrl;
-        const quality = item.condition;
-        let format: string | undefined;
+		if (bookDetails.title) {
+			query = bookDetails.title;
+		}
 
-        const title = item.title?.toLowerCase() ?? "";
-        if (title.includes("paperback")) {
-          format = "Paperback";
-        } else if (title.includes("hardcover")) {
-          format = "Hardcover";
-        }
+		const response = await ebayApi.buy.browse.search({
+			q: query,
+			limit: '10',
+			filter: 'itemLocationCountry:GB',
+		});
 
-        return {
-          price,
-          link,
-          quality: quality || undefined,
-          format: format || undefined,
-        };
-      })
-      .filter((item) => item.price > 0 && item.link);
+		const itemSummaries = response.itemSummaries || [];
 
-    return items;
-  } catch (error) {
-    return handleScraperError("eBay", error);
-  }
+		const items: ItemData[] = itemSummaries
+			.filter((item: { title: string }) => {
+				const title = item.title?.toLowerCase() ?? '';
+				const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
+				return !isBundle;
+			})
+			.map(
+				(item: {
+					price: { value: any };
+					itemWebUrl: string;
+					condition: any;
+					title: string;
+				}) => {
+					const price = parseFloat(item.price?.value ?? '0');
+					const link = item.itemWebUrl;
+					const quality = item.condition;
+					let format: string | undefined;
+
+					const title = item.title?.toLowerCase() ?? '';
+					if (title.includes('paperback')) {
+						format = 'Paperback';
+					} else if (title.includes('hardcover')) {
+						format = 'Hardcover';
+					}
+
+					return {
+						price,
+						link,
+						quality: quality || undefined,
+						format: format || undefined,
+					};
+				}
+			)
+			.filter(
+				(item: { price: number; link: any }) => item.price > 0 && item.link
+			);
+
+		return items;
+	} catch (error) {
+		return handleScraperError('eBay', error);
+	}
 }
 
 async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
-  try {
-    const searchUrl = `https://www.amazon.co.uk/s?k=${barcode}&i=stripbooks`;
-    const { data: searchData } = await axios.get(searchUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-      timeout: 10000,
-    });
-    const $ = load(searchData);
-    const items: ItemData[] = [];
+	try {
+		const searchUrl = `https://www.amazon.co.uk/s?k=${barcode}&i=stripbooks`;
+		const { data: searchData } = await axios.get(searchUrl, {
+			headers: {
+				'User-Agent':
+					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+			},
+			timeout: 10000,
+		});
+		const $ = load(searchData);
+		const items: ItemData[] = [];
 
-    $(".s-result-item[data-asin]").each((_, el) => {
-      const $$ = load(el);
+		$('.s-result-item[data-asin]').each((_, el) => {
+			const $$ = load(el);
 
-      const title = $$("h2.a-size-medium.a-text-normal").text().toLowerCase();
-      const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
-      if (isBundle) {
-        return;
-      }
+			const title = $$('h2.a-size-medium.a-text-normal').text().toLowerCase();
+			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
+			if (isBundle) {
+				return;
+			}
 
-      const priceText = $$("span.a-price").first().text();
-      const link = $$(".a-link-normal.a-text-normal").attr("href");
-      let quality = $$('div[data-cy="secondary-offer-recipe"]').text().trim();
-      const offersDisplay = $$('span.a-declarative[data-action="show-all-offers-display"]').attr('data-show-all-offers-display');
-      if (offersDisplay) {
-        const offersData = JSON.parse(offersDisplay);
-        if (offersData.condition) {
-          quality = offersData.condition;
-        }
-      } else {
-        const truncatedConditionNote = $$('span#truncatedConditionNoteContainer span.a-truncate-full').text().trim();
-        if (truncatedConditionNote) {
-          quality = truncatedConditionNote;
-        }
-      }
-      const format = $$("span#productSubtitle").text().trim().split("–")[0]?.trim();
+			const priceText = $$('span.a-price').first().text();
+			const link = $$('.a-link-normal.a-text-normal').attr('href');
+			let quality = $$('div[data-cy="secondary-offer-recipe"]').text().trim();
+			const offersDisplay = $$(
+				'span.a-declarative[data-action="show-all-offers-display"]'
+			).attr('data-show-all-offers-display');
+			if (offersDisplay) {
+				const offersData = JSON.parse(offersDisplay);
+				if (offersData.condition) {
+					quality = offersData.condition;
+				}
+			} else {
+				const truncatedConditionNote = $$(
+					'span#truncatedConditionNoteContainer span.a-truncate-full'
+				)
+					.text()
+					.trim();
+				if (truncatedConditionNote) {
+					quality = truncatedConditionNote;
+				}
+			}
+			const format = $$('span#productSubtitle')
+				.text()
+				.trim()
+				.split('–')[0]
+				?.trim();
 
-      if (priceText && link) {
-        const price = parsePrice(priceText);
-        if (!isNaN(price)) {
-          items.push({
-            price,
-            link: `https://www.amazon.co.uk${link}`,
-            quality: quality || undefined,
-            format: format || undefined,
-          });
-        }
-      }
-    });
-    return items;
-  } catch (error) {
-    return handleScraperError("Amazon", error);
-  }
+			if (priceText && link) {
+				const price = parsePrice(priceText);
+				if (!isNaN(price)) {
+					items.push({
+						price,
+						link: `https://www.amazon.co.uk${link}`,
+						quality: quality || undefined,
+						format: format || undefined,
+					});
+				}
+			}
+		});
+		return items;
+	} catch (error) {
+		return handleScraperError('Amazon', error);
+	}
 }
 
 async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
-  try {
-    const url = `https://www.worldofbooks.com/en-gb/search?q=${barcode}`;
-    const { data } = await axios.get(url, { timeout: 10000 });
-    const $ = load(data);
-    const items: ItemData[] = [];
+	try {
+		const url = `https://www.worldofbooks.com/en-gb/search?q=${barcode}`;
+		const { data } = await axios.get(url, { timeout: 10000 });
+		const $ = load(data);
+		const items: ItemData[] = [];
 
-    $(".product-card").each((_, el) => {
-      const $$ = load(el);
+		$('.product-card').each((_, el) => {
+			const $$ = load(el);
 
-      const title = $$(".product-title").text().toLowerCase();
-      const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
-      if (isBundle) {
-        return;
-      }
+			const title = $$('.product-title').text().toLowerCase();
+			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
+			if (isBundle) {
+				return;
+			}
 
-      const priceText = $$(".price").text();
-      const link = $$(".product-card__title-link").attr("href");
-      const quality = $$(".condition").text().trim();
-      const format = $$(".format").text().trim();
+			const priceText = $$('.price').text();
+			const link = $$('.product-card__title-link').attr('href');
+			const quality = $$('.condition').text().trim();
+			const format = $$('.format').text().trim();
 
-      if (priceText && link) {
-        const price = parsePrice(priceText);
-        if (!isNaN(price)) {
-          items.push({
-            price,
-            link: `https://www.worldofbooks.com${link}`,
-            quality: quality || undefined,
-            format: format || undefined,
-          });
-        }
-      }
-    });
-    return items;
-  } catch (error) {
-    return handleScraperError("WorldOfBooks", error);
-  }
+			if (priceText && link) {
+				const price = parsePrice(priceText);
+				if (!isNaN(price)) {
+					items.push({
+						price,
+						link: `https://www.worldofbooks.com${link}`,
+						quality: quality || undefined,
+						format: format || undefined,
+					});
+				}
+			}
+		});
+		return items;
+	} catch (error) {
+		return handleScraperError('WorldOfBooks', error);
+	}
 }
 
 async function scrapeAbeBooks(barcode: string): Promise<ItemData[]> {
-  try {
-    const searchUrl = `https://www.abebooks.co.uk/servlet/SearchResults?sts=t&an=&tn=&isbn=${barcode}`;
-    const { data: searchData } = await axios.get(searchUrl, { timeout: 10000 });
-    const $ = load(searchData);
-    const items: ItemData[] = [];
+	try {
+		const searchUrl = `https://www.abebooks.co.uk/servlet/SearchResults?sts=t&an=&tn=&isbn=${barcode}`;
+		const { data: searchData } = await axios.get(searchUrl, { timeout: 10000 });
+		const $ = load(searchData);
+		const items: ItemData[] = [];
 
-    $(".result-item").each((_, el) => {
-      const $$ = load(el);
+		$('.result-item').each((_, el) => {
+			const $$ = load(el);
 
-      const title = $$("div.result-detail h2 > a").text().toLowerCase();
-      const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
-      if (isBundle) {
-        return;
-      }
+			const title = $$('div.result-detail h2 > a').text().toLowerCase();
+			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
+			if (isBundle) {
+				return;
+			}
 
-      const priceText = $$("div.result-pricing span.x-large").text();
-      const link = $$("div.result-detail h2 > a").attr("href");
-      const quality = $$("p.item-description").text().trim();
-      const format = $$("div.m-sm-b > span:last-child").text().trim();
+			const priceText = $$('div.result-pricing span.x-large').text();
+			const link = $$('div.result-detail h2 > a').attr('href');
+			const quality = $$('p.item-description').text().trim();
+			const format = $$('div.m-sm-b > span:last-child').text().trim();
 
-      if (priceText && link) {
-        const price = parsePrice(priceText);
-        if (!isNaN(price)) {
-          items.push({
-            price,
-            link: `https://www.abebooks.co.uk${link}`,
-            quality: quality || undefined,
-            format: format || undefined,
-          });
-        }
-      }
-    });
-    return items;
-  } catch (error) {
-    return handleScraperError("AbeBooks", error);
-  }
+			if (priceText && link) {
+				const price = parsePrice(priceText);
+				if (!isNaN(price)) {
+					items.push({
+						price,
+						link: `https://www.abebooks.co.uk${link}`,
+						quality: quality || undefined,
+						format: format || undefined,
+					});
+				}
+			}
+		});
+		return items;
+	} catch (error) {
+		return handleScraperError('AbeBooks', error);
+	}
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const barcode = searchParams.get("barcode");
+	const { searchParams } = new URL(request.url);
+	const barcode = searchParams.get('barcode');
 
-  if (!barcode) {
-    return NextResponse.json({ error: "Barcode is required" }, { status: 400 });
-  }
+	if (!barcode) {
+		return NextResponse.json({ error: 'Barcode is required' }, { status: 400 });
+	}
 
-  try {
-    const bookDetailsPromise = fetchBookDetails(barcode);
+	try {
+		const bookDetailsPromise = fetchBookDetails(barcode);
 
-    const [
-      bookDetails,
-      ebayItems,
-      worldOfBooksItems,
-      amazonItems,
-      abeBooksItems,
-    ] = await Promise.all([
-      bookDetailsPromise,
-      scrapeEbay(barcode),
-      scrapeWorldOfBooks(barcode),
-      scrapeAmazon(barcode),
-      scrapeAbeBooks(barcode),
-    ]);
+		const [
+			bookDetails,
+			ebayItems,
+			worldOfBooksItems,
+			amazonItems,
+			abeBooksItems,
+		] = await Promise.all([
+			bookDetailsPromise,
+			scrapeEbay(barcode),
+			scrapeWorldOfBooks(barcode),
+			scrapeAmazon(barcode),
+			scrapeAbeBooks(barcode),
+		]);
 
-    const allItems = [
-      ...ebayItems,
-      ...worldOfBooksItems,
-      ...amazonItems,
-      ...abeBooksItems,
-    ];
+		const allItems = [
+			...ebayItems,
+			...worldOfBooksItems,
+			...amazonItems,
+			...abeBooksItems,
+		];
 
-    // Sort items by price in ascending order
-    ebayItems.sort((a, b) => a.price - b.price);
-    worldOfBooksItems.sort((a, b) => a.price - b.price);
-    amazonItems.sort((a, b) => a.price - b.price);
-    abeBooksItems.sort((a, b) => a.price - b.price);
+		// Sort items by price in ascending order
+		ebayItems.sort((a, b) => a.price - b.price);
+		worldOfBooksItems.sort((a, b) => a.price - b.price);
+		amazonItems.sort((a, b) => a.price - b.price);
+		abeBooksItems.sort((a, b) => a.price - b.price);
 
-    let minPriceItem = null;
-    let maxPriceItem = null;
+		let minPriceItem = null;
+		let maxPriceItem = null;
 
-    if (allItems.length > 0) {
-      minPriceItem = allItems.reduce((prev, current) =>
-        prev.price < current.price ? prev : current,
-      );
-      maxPriceItem = allItems.reduce((prev, current) =>
-        prev.price > current.price ? prev : current,
-      );
-    }
+		if (allItems.length > 0) {
+			minPriceItem = allItems.reduce((prev, current) =>
+				prev.price < current.price ? prev : current
+			);
+			maxPriceItem = allItems.reduce((prev, current) =>
+				prev.price > current.price ? prev : current
+			);
+		}
 
-    const highestPriceItem = maxPriceItem;
+		const highestPriceItem = maxPriceItem;
 
-    return NextResponse.json({
-      bookDetails,
-      ebay: {
-        items: ebayItems,
-      },
-      worldOfBooks: {
-        items: worldOfBooksItems,
-      },
-      amazon: {
-        items: amazonItems,
-      },
-      abeBooks: {
-        items: abeBooksItems,
-      },
-      summary: {
-        minItem: minPriceItem,
-        maxItem: maxPriceItem,
-        highestItem: highestPriceItem,
-      },
-    });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Failed to fetch data for the provided barcode.",
-        details: (error as Error).message,
-      },
-      { status: 500 },
-    );
-  }
+		return NextResponse.json({
+			bookDetails,
+			ebay: {
+				items: ebayItems,
+			},
+			worldOfBooks: {
+				items: worldOfBooksItems,
+			},
+			amazon: {
+				items: amazonItems,
+			},
+			abeBooks: {
+				items: abeBooksItems,
+			},
+			summary: {
+				minItem: minPriceItem,
+				maxItem: maxPriceItem,
+				highestItem: highestPriceItem,
+			},
+		});
+	} catch (error) {
+		return NextResponse.json(
+			{
+				error: 'Failed to fetch data for the provided barcode.',
+				details: (error as Error).message,
+			},
+			{ status: 500 }
+		);
+	}
 }
