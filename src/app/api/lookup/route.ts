@@ -129,51 +129,77 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 		const items: ItemData[] = [];
 
 		$('.s-result-item[data-asin]').each((_, el) => {
-			const $$ = load(el);
+			const item$ = $(el);
 
-			const title = $$('h2.a-size-medium.a-text-normal').text().toLowerCase();
+			const title = item$.find('h2.a-size-medium.a-text-normal').text().toLowerCase();
 			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
 			if (isBundle) {
 				return;
 			}
 
-			const priceText = $$('span.a-price').first().text();
-			const link = $$('.a-link-normal.a-text-normal').attr('href');
-			let quality = $$('div[data-cy="secondary-offer-recipe"]').text().trim();
-			const offersDisplay = $$(
-				'span.a-declarative[data-action="show-all-offers-display"]'
-			).attr('data-show-all-offers-display');
-			if (offersDisplay) {
-				const offersData = JSON.parse(offersDisplay);
-				if (offersData.condition) {
-					quality = offersData.condition;
-				}
-			} else {
-				const truncatedConditionNote = $$(
-					'span#truncatedConditionNoteContainer span.a-truncate-full'
-				)
-					.text()
-					.trim();
-				if (truncatedConditionNote) {
-					quality = truncatedConditionNote;
-				}
-			}
-			const format = $$('.a-row.a-size-base.a-color-base a')
-				.text()
-				.trim();
+			const resultLink = item$.find('.a-link-normal.a-text-normal').attr('href');
 
-			if (priceText && link) {
-				const price = parsePrice(priceText);
-				if (!isNaN(price)) {
-					items.push({
-						price,
-						link: `https://www.amazon.co.uk${link}`,
-						quality: quality || undefined,
-						format: format || undefined,
-					});
+			// Find format rows within the result item
+			const formatRows = item$.find('.a-row.a-size-base.a-color-base');
+
+			if (formatRows.length > 0) {
+				formatRows.each((_, formatEl) => {
+					const format$ = $(formatEl);
+					const format = format$.find('a').text().trim();
+					const priceText = format$.parent().find('span.a-price').first().text(); // Price might be a sibling of the row
+					const link = format$.find('a').attr('href') || resultLink;
+
+					if (priceText && link && format) {
+						const price = parsePrice(priceText);
+						if (!isNaN(price)) {
+							items.push({
+								price,
+								link: `https://www.amazon.co.uk${link}`,
+								quality: 'N/A',
+								format,
+							});
+						}
+					}
+				});
+			} else {
+				// Fallback for single-format results
+				const priceText = item$.find('span.a-price').first().text();
+				if (priceText && resultLink) {
+					const price = parsePrice(priceText);
+					if (!isNaN(price)) {
+						items.push({
+							price,
+							link: `https://www.amazon.co.uk${resultLink}`,
+							quality: 'N/A',
+							format: 'N/A',
+						});
+					}
 				}
 			}
 		});
+
+		// This is a new part to handle direct product pages
+		if ($('.s-result-item[data-asin]').length === 0) {
+			const productLink = $('link[rel="canonical"]').attr('href') || 'https://www.amazon.co.uk';
+			$('#tmmSwatches ul li').each((i, el) => {
+				const swatch = $(el);
+				const format = swatch.find('.a-button-inner a span').first().text().trim();
+				const priceText = swatch.find('.a-button-inner a .a-color-price').text().trim();
+
+				if (format && priceText) {
+					const price = parsePrice(priceText);
+					if (!isNaN(price)) {
+						items.push({
+							price,
+							link: productLink,
+							quality: 'N/A',
+							format,
+						});
+					}
+				}
+			});
+		}
+
 		return items;
 	} catch (error) {
 		return handleScraperError('Amazon', error);
