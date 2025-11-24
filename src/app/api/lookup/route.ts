@@ -158,11 +158,9 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 					quality = truncatedConditionNote;
 				}
 			}
-			const format = $$('span#productSubtitle')
+			const format = $$('.a-row.a-size-base.a-color-base a')
 				.text()
-				.trim()
-				.split('–')[0]
-				?.trim();
+				.trim();
 
 			if (priceText && link) {
 				const price = parsePrice(priceText);
@@ -223,24 +221,24 @@ async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
 
 async function scrapeAbeBooks(barcode: string): Promise<ItemData[]> {
 	try {
-		const searchUrl = `https://www.abebooks.co.uk/servlet/SearchResults?sts=t&an=&tn=&isbn=${barcode}`;
+		const searchUrl = `https://www.abebooks.co.uk/servlet/SearchResults?sts=t&an=&tn=&isbn=${barcode}&cty=uk`;
 		const { data: searchData } = await axios.get(searchUrl, { timeout: 10000 });
 		const $ = load(searchData);
 		const items: ItemData[] = [];
 
-		$('.result-item').each((_, el) => {
+		$('li[data-test-id="listing-item"]').each((_, el) => {
 			const $$ = load(el);
 
-			const title = $$('div.result-detail h2 > a').text().toLowerCase();
+			const title = $$('span[data-test-id="listing-title"]').text().toLowerCase();
 			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
 			if (isBundle) {
 				return;
 			}
 
-			const priceText = $$('div.result-pricing span.x-large').text();
-			const link = $$('div.result-detail h2 > a').attr('href');
-			const quality = $$('p.item-description').text().trim();
-			const format = $$('div.m-sm-b > span:last-child').text().trim();
+			const priceText = $$('p[data-test-id="item-price"]').text();
+			const link = $$('h2 a').attr('href');
+			const quality = $$('span[data-test-id="listing-book-condition"]').text().trim();
+			const format = $$('meta[itemprop="bookFormat"]').attr('content');
 
 			if (priceText && link) {
 				const price = parsePrice(priceText);
