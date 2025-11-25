@@ -145,11 +145,16 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 			if (formatRows.length > 0) {
 				formatRows.each((_, formatEl) => {
 					const format$ = $(formatEl);
-					const format = format$.find('a').text().trim();
+					// Extract ONLY the format link text, not all text in the row
+					const formatLink = format$.find('a').first();
+					const format = formatLink.text().trim();
 					const priceText = format$.parent().find('span.a-price').first().text(); // Price might be a sibling of the row
-					const link = format$.find('a').attr('href') || resultLink;
+					const link = formatLink.attr('href') || resultLink;
 
-					if (priceText && link && format) {
+					// Only include if format doesn't look like price data or weird text
+					const isPriceOrGarbage = /£|\$|[0-9]{1,3}\.[0-9]{2}|Print List|RRP:/i.test(format);
+
+					if (priceText && link && format && !isPriceOrGarbage) {
 						const price = parsePrice(priceText);
 						if (!isNaN(price)) {
 							items.push({
