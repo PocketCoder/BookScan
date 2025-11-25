@@ -28,8 +28,8 @@ function parsePrice(priceText: string): number {
  * @returns An empty array of ItemData.
  */
 function handleScraperError(scraperName: string, error: unknown): ItemData[] {
-	console.log(error);
-	throw error; // Re-throw the error
+	console.error(`Error scraping ${scraperName}:`, error);
+	return []; // Return empty array on error
 }
 
 async function fetchBookDetails(barcode: string): Promise<BookDetails> {
@@ -50,7 +50,7 @@ async function fetchBookDetails(barcode: string): Promise<BookDetails> {
 			};
 		}
 	} catch (error) {
-		throw error; // Re-throw the error
+		console.error(`Error fetching book details:`, error);
 	}
 	return {};
 }
@@ -80,9 +80,9 @@ export async function scrapeEbay(barcode: string): Promise<ItemData[]> {
 			})
 			.map(
 				(item: {
-					price: { value: any };
+					price: { value: string };
 					itemWebUrl: string;
-					condition: any;
+					condition: string;
 					title: string;
 				}) => {
 					const price = parseFloat(item.price?.value ?? '0');
@@ -106,7 +106,7 @@ export async function scrapeEbay(barcode: string): Promise<ItemData[]> {
 				}
 			)
 			.filter(
-				(item: { price: number; link: any }) => item.price > 0 && item.link
+				(item: { price: number; link: string }) => item.price > 0 && item.link
 			);
 
 		return items;
@@ -155,7 +155,7 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 							items.push({
 								price,
 								link: `https://www.amazon.co.uk${link}`,
-								quality: 'N/A',
+								quality: undefined,
 								format,
 							});
 						}
@@ -170,8 +170,8 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 						items.push({
 							price,
 							link: `https://www.amazon.co.uk${resultLink}`,
-							quality: 'N/A',
-							format: 'N/A',
+							quality: undefined,
+							format: undefined,
 						});
 					}
 				}
@@ -192,7 +192,7 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 						items.push({
 							price,
 							link: productLink,
-							quality: 'N/A',
+							quality: undefined,
 							format,
 						});
 					}
