@@ -141,7 +141,7 @@ describe("ScannerPage", () => {
 
   it("should show loading state when fetching data", async () => {
     // Defer the fetch response to keep it in loading state initially
-    global.fetch = jest.fn(() => new Promise(() => {}));
+    global.fetch = jest.fn(() => new Promise(() => { }));
 
     (useSearchParams as jest.Mock).mockReturnValue(
       new URLSearchParams("barcode=123"),
@@ -185,8 +185,8 @@ describe("ScannerPage", () => {
     expect(screen.getByText("Format: Paperback")).toBeInTheDocument();
     expect(screen.getByAltText("Cover of Test Book")).toBeInTheDocument();
 
-    expect(screen.getByText("Minimum Price:")).toBeInTheDocument();
-    expect(screen.getByText("Maximum Price:")).toBeInTheDocument();
+    expect(screen.getByText(/Lowest Price:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Highest Price:/i)).toBeInTheDocument();
 
     expect(screen.getByText("eBay")).toBeInTheDocument();
     expect(screen.getByText("AbeBooks")).toBeInTheDocument();
