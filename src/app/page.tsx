@@ -17,9 +17,9 @@ export default function Home() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
       <Card className="w-full max-w-4xl shadow-lg rounded-lg">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">
+          <h1 className="text-3xl font-bold text-center">
             Book Price Scanner
-          </CardTitle>
+          </h1>
           <CardDescription className="text-center">
             Scan a barcode or enter it manually to find book prices.
           </CardDescription>
