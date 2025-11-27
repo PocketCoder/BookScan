@@ -5,14 +5,6 @@ import axios from "axios";
 jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-// Mock cheerio
-jest.mock("cheerio", () => {
-  const actualCheerio = jest.requireActual("cheerio");
-  return {
-    load: jest.fn((html) => actualCheerio.load(html)),
-  };
-});
-
 // Helper to create a mock request object
 const createMockRequest = (barcode: string | null) => {
   const url = barcode
