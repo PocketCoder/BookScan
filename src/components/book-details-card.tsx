@@ -9,7 +9,7 @@ interface BookDetailsCardProps {
 /**
  * Component for displaying book details including cover, title, authors, and format
  */
-export const BookDetailsCard: React.FC<BookDetailsCardProps> = ({
+export const BookDetailsCard: React.FC<BookDetailsCardProps> = React.memo(({
     bookDetails,
 }) => {
     return (
@@ -40,4 +40,6 @@ export const BookDetailsCard: React.FC<BookDetailsCardProps> = ({
             )}
         </div>
     );
-};
+});
+
+BookDetailsCard.displayName = "BookDetailsCard";

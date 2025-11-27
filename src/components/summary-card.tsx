@@ -12,7 +12,7 @@ interface SummaryCardProps {
 /**
  * Component for displaying price summary (min, average, max)
  */
-export const SummaryCard: React.FC<SummaryCardProps> = ({
+export const SummaryCard: React.FC<SummaryCardProps> = React.memo(({
     minItem,
     averageItem,
     highestItem,
@@ -55,4 +55,6 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
             </CardContent>
         </Card>
     );
-};
+});
+
+SummaryCard.displayName = "SummaryCard";

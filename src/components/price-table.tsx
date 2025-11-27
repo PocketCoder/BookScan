@@ -27,7 +27,7 @@ interface PriceTableProps {
 /**
  * Reusable component for displaying price comparison tables across different platforms
  */
-export const PriceTable: React.FC<PriceTableProps> = ({
+export const PriceTable: React.FC<PriceTableProps> = React.memo(({
     platform,
     platformDisplay,
     items,
@@ -90,4 +90,6 @@ export const PriceTable: React.FC<PriceTableProps> = ({
             </CardContent>
         </Card>
     );
-};
+});
+
+PriceTable.displayName = "PriceTable";
