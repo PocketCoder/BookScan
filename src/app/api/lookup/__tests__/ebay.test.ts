@@ -13,7 +13,7 @@ jest.mock('ebay-api', () => {
   }));
 
   // Add static properties like MarketplaceId to the mocked constructor
-  mockEbayApiConstructor.MarketplaceId = {
+  (mockEbayApiConstructor as any).MarketplaceId = {
     EBAY_GB: 'EBAY_GB', // Mock the specific value used
   };
 
@@ -41,6 +41,7 @@ describe('scrapeEbay', () => {
     // Ensure ebayApi.buy.browse.search is a mock function
     (ebayApi.buy.browse.search as jest.Mock).mockClear();
     (axios.get as jest.Mock).mockClear();
+    jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   it('should return an empty array if no items are found', async () => {
@@ -61,7 +62,9 @@ describe('scrapeEbay', () => {
     });
     (ebayApi.buy.browse.search as jest.Mock).mockRejectedValueOnce(new Error('eBay API error'));
 
-    await expect(scrapeEbay(mockBarcode)).rejects.toThrow('eBay API error');
+    const result = await scrapeEbay(mockBarcode);
+    expect(result).toEqual([]);
+    expect(console.error).toHaveBeenCalledWith('Error scraping eBay:', expect.any(Error));
   });
 
   it('should correctly parse and return item data from eBay', async () => {

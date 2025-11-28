@@ -17,6 +17,10 @@ jest.mock("next/navigation", () => ({
   useServerInsertedHTML: jest.fn(),
 }));
 
+declare global {
+  var simulateBarcodeScan: (text: string) => void;
+}
+
 // Mock BarcodeScanner component
 jest.mock("@/components/barcode-scanner", () => ({
   BarcodeScanner: jest.fn(({ onResult }) => {
@@ -194,17 +198,17 @@ describe("ScannerPage", () => {
     expect(screen.getByText("Amazon")).toBeInTheDocument();
 
     // Check eBay items
-    const ebayCard = screen.getByText("eBay").closest('[data-slot="card"]');
-    expect(within(ebayCard).getByText("£10.00")).toBeInTheDocument();
-    expect(within(ebayCard).getByText("Used")).toBeInTheDocument();
-    expect(within(ebayCard).getByText("Paperback")).toBeInTheDocument();
+    const ebaySection = screen.getByText("eBay").closest('section') ||
+      screen.getByText("eBay").parentElement?.parentElement?.parentElement;
+    expect(within(ebaySection!).getByText("£10.00")).toBeInTheDocument();
+    expect(within(ebaySection!).getByText("Used")).toBeInTheDocument();
+    expect(within(ebaySection!).getByText("Paperback")).toBeInTheDocument();
 
     // Check AbeBooks items
-    const abeBooksCard = screen
-      .getByText("AbeBooks")
-      .closest('[data-slot="card"]');
-    expect(within(abeBooksCard).getByText("£8.00")).toBeInTheDocument();
-    expect(within(abeBooksCard).getByText("Good")).toBeInTheDocument();
+    const abeBooksSection = screen.getByText("AbeBooks").closest('section') ||
+      screen.getByText("AbeBooks").parentElement?.parentElement?.parentElement;
+    expect(within(abeBooksSection!).getByText("£8.00")).toBeInTheDocument();
+    expect(within(abeBooksSection!).getByText("Good")).toBeInTheDocument();
   });
 
   // Test initial barcode from search params

@@ -147,9 +147,11 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 					const format$ = $(formatEl);
 					// Extract ONLY the format link text, not all text in the row
 					const formatLink = format$.find('a').first();
+					const linkAttr = formatLink.attr('href');
+					const link = linkAttr || resultLink;
 					const format = formatLink.text().trim();
 					const priceText = format$.parent().find('span.a-price').first().text(); // Price might be a sibling of the row
-					const link = formatLink.attr('href') || resultLink;
+					const quality = format$.parent().find('div[data-cy="secondary-offer-recipe"]').text().trim();
 
 					// Only include if format doesn't look like price data or weird text
 					const isPriceOrGarbage = /£|\$|[0-9]{1,3}\.[0-9]{2}|Print List|RRP:/i.test(format);
@@ -160,7 +162,7 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 							items.push({
 								price,
 								link: `https://www.amazon.co.uk${link}`,
-								quality: undefined,
+								quality: quality || undefined,
 								format,
 							});
 						}
@@ -169,13 +171,14 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 			} else {
 				// Fallback for single-format results
 				const priceText = item$.find('span.a-price').first().text();
+				const quality = item$.find('div[data-cy="secondary-offer-recipe"]').text().trim();
 				if (priceText && resultLink) {
 					const price = parsePrice(priceText);
 					if (!isNaN(price)) {
 						items.push({
 							price,
 							link: `https://www.amazon.co.uk${resultLink}`,
-							quality: undefined,
+							quality: quality || undefined,
 							format: undefined,
 						});
 					}
@@ -197,7 +200,7 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 						items.push({
 							price,
 							link: productLink,
-							quality: undefined,
+							quality: undefined, // Quality not extracted in this path currently
 							format,
 						});
 					}
@@ -219,18 +222,18 @@ async function scrapeWorldOfBooks(barcode: string): Promise<ItemData[]> {
 		const items: ItemData[] = [];
 
 		$('.product-card').each((_, el) => {
-			const $$ = load(el);
+			const $$ = $(el);
 
-			const title = $$('.product-title').text().toLowerCase();
+			const title = $$.find('.product-title').text().toLowerCase();
 			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
 			if (isBundle) {
 				return;
 			}
 
-			const priceText = $$('.price').text();
-			const link = $$('.product-card__title-link').attr('href');
-			const quality = $$('.condition').text().trim();
-			const format = $$('.format').text().trim();
+			const priceText = $$.find('.price').text();
+			const link = $$.find('.product-card__title-link').attr('href');
+			const quality = $$.find('.condition').text().trim();
+			const format = $$.find('.format').text().trim();
 
 			if (priceText && link) {
 				const price = parsePrice(priceText);
@@ -258,18 +261,18 @@ async function scrapeAbeBooks(barcode: string): Promise<ItemData[]> {
 		const items: ItemData[] = [];
 
 		$('li[data-test-id="listing-item"]').each((_, el) => {
-			const $$ = load(el);
+			const $$ = $(el);
 
-			const title = $$('span[data-test-id="listing-title"]').text().toLowerCase();
+			const title = $$.find('span[data-test-id="listing-title"]').text().toLowerCase();
 			const isBundle = /bundle|lot|set of|x books|books x/i.test(title);
 			if (isBundle) {
 				return;
 			}
 
-			const priceText = $$('p[data-test-id="item-price"]').text();
-			const link = $$('h2 a').attr('href');
-			const quality = $$('span[data-test-id="listing-book-condition"]').text().trim();
-			const format = $$('meta[itemprop="bookFormat"]').attr('content');
+			const priceText = $$.find('p[data-test-id="item-price"]').text();
+			const link = $$.find('h2 a').attr('href');
+			const quality = $$.find('span[data-test-id="listing-book-condition"]').text().trim();
+			const format = $$.find('meta[itemprop="bookFormat"]').attr('content');
 
 			if (priceText && link) {
 				const price = parsePrice(priceText);

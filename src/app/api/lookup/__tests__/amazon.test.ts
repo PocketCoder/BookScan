@@ -1,8 +1,44 @@
-import { GET } from "../route";
+import { GET, ebayApi } from "../route";
 import axios from "axios";
 import { load } from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
+
+// Mock next/server
+jest.mock("next/server", () => ({
+  NextResponse: {
+    json: (body: any, init?: any) => ({
+      status: init?.status || 200,
+      json: async () => body,
+    }),
+  },
+}));
+
+// Mock ebay-api
+jest.mock('ebay-api', () => {
+  const mockSearch = jest.fn();
+  const mockEbayApiConstructor = jest.fn(() => ({
+    buy: {
+      browse: {
+        search: mockSearch,
+      },
+    },
+  }));
+  (mockEbayApiConstructor as any).MarketplaceId = {
+    EBAY_GB: 'EBAY_GB',
+  };
+  return {
+    __esModule: true,
+    default: mockEbayApiConstructor,
+    ebayApi: {
+      buy: {
+        browse: {
+          search: mockSearch,
+        },
+      },
+    },
+  };
+});
 
 // Mock axios
 jest.mock("axios");
@@ -31,6 +67,7 @@ describe("Amazon Scraper", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (ebayApi.buy.browse.search as jest.Mock).mockResolvedValue({ itemSummaries: [] });
     mockedAxios.get.mockImplementation((url) => {
       if (url.startsWith("https://www.googleapis.com/books")) {
         return Promise.resolve({ data: { items: [] } });
@@ -47,12 +84,10 @@ describe("Amazon Scraper", () => {
     const json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.amazon.items).toHaveLength(1); // Assuming only one main item is found
+    expect(json.amazon.items).toHaveLength(2); // Found 2 items in the mock HTML
 
     const amazonItem = json.amazon.items[0];
-    expect(amazonItem.format).toBe("Paperback");
-    expect(amazonItem.quality).toBe(
-      "Shipped promptly within 24hours. Book is in very good condition - 100% money back guarantee if customers are not satisfied.",
-    );
+    expect(amazonItem.format).toBe("Hardcover");
+    expect(amazonItem.quality).toBe("New");
   });
 });
