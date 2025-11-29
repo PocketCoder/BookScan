@@ -50,13 +50,23 @@ export const mockUseSearchParams = jest.fn(() => ({
 // Mock barcode scan result
 export function createMockScanResult(barcode: string): Result {
     return {
+        text: barcode,
+        rawBytes: new Uint8Array(),
+        numBits: barcode.length * 8,
+        resultPoints: [],
+        format: 13, // BarcodeFormat.EAN_13
+        timestamp: Date.now(),
+        resultMetadata: new Map(),
         getText: () => barcode,
         getBarcodeFormat: () => 13, // EAN_13
         getNumBits: () => barcode.length * 8,
         getRawBytes: () => new Uint8Array(),
         getResultPoints: () => [],
         getTimestamp: () => Date.now(),
-    } as Result;
+        getResultMetadata: () => new Map(),
+        putMetadata: () => {},
+        addResultPoints: () => {},
+    } as unknown as Result;
 }
 
 // Mock Next.js Image component
