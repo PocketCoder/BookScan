@@ -125,6 +125,7 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 			},
 			timeout: 10000,
 		});
+
 		const $ = load(searchData);
 		const items: ItemData[] = [];
 
@@ -139,22 +140,26 @@ async function scrapeAmazon(barcode: string): Promise<ItemData[]> {
 
 			const resultLink = item$.find('.a-link-normal.a-text-normal').attr('href');
 
-			// Find format rows within the result item
-			const formatRows = item$.find('.a-row.a-size-base.a-color-base');
+			// Find format rows within the price section
+			// These are divs that contain format links (Paperback, Hardcover, etc.)
+			const formatRows = item$.find('div[data-cy="price-recipe"] div.a-row.a-spacing-mini.a-size-base.a-color-base');
 
 			if (formatRows.length > 0) {
 				formatRows.each((_, formatEl) => {
 					const format$ = $(formatEl);
-					// Extract ONLY the format link text, not all text in the row
+					// Extract the format link text
 					const formatLink = format$.find('a').first();
 					const linkAttr = formatLink.attr('href');
 					const link = linkAttr || resultLink;
 					const format = formatLink.text().trim();
-					const priceText = format$.parent().find('span.a-price').first().text(); // Price might be a sibling of the row
-					const quality = format$.parent().find('div[data-cy="secondary-offer-recipe"]').text().trim();
 
-					// Only include if format doesn't look like price data or weird text
-					const isPriceOrGarbage = /£|\$|[0-9]{1,3}\.[0-9]{2}|Print List|RRP:/i.test(format);
+					// Find the price - it's in the next sibling div
+					const nextRow = format$.next('div.a-row.a-size-base.a-color-base');
+					const priceText = nextRow.find('span.a-price').first().text();
+					const quality = item$.find('div[data-cy="secondary-offer-recipe"]').text().trim();
+
+					// Only include if we have valid format and price
+					const isPriceOrGarbage = /£|\$|[0-9]{1,3}\.[0-9]{2}|Print List|RRP:|Save/i.test(format);
 
 					if (priceText && link && format && !isPriceOrGarbage) {
 						const price = parsePrice(priceText);
