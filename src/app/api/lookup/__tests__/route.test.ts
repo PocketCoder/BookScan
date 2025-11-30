@@ -269,25 +269,33 @@ describe("API Route - GET /api/lookup", () => {
             <h2 class="a-size-medium a-text-normal">
               <a class="a-link-normal a-text-normal" href="/amazon1">Amazon Book 1</a>
             </h2>
-            <span class="a-price">
-              <span class="a-offscreen">£10.00</span>
-            </span>
-            <div data-cy="secondary-offer-recipe">Used - Very Good</div>
-            <div class="a-row a-size-base a-color-base">
-              <a class="a-link-normal a-text-normal" href="/amazon1">Paperback</a>
+            <div data-cy="price-recipe">
+              <div class="a-row a-spacing-mini a-size-base a-color-base">
+                <a href="/amazon1">Paperback</a>
+              </div>
+              <div class="a-row a-size-base a-color-base">
+                <span class="a-price">
+                  <span class="a-offscreen">£10.00</span>
+                </span>
+              </div>
             </div>
+            <div data-cy="secondary-offer-recipe">Used - Very Good</div>
           </div>
           <div class="s-result-item" data-asin="2">
             <h2 class="a-size-medium a-text-normal">
               <a class="a-link-normal a-text-normal" href="/amazon2">Amazon Book 2</a>
             </h2>
-            <span class="a-price">
-              <span class="a-offscreen">£3.50</span>
-            </span>
-            <div data-cy="secondary-offer-recipe">New</div>
-            <div class="a-row a-size-base a-color-base">
-              <a class="a-link-normal a-text-normal" href="/amazon2">Hardcover</a>
+            <div data-cy="price-recipe">
+              <div class="a-row a-spacing-mini a-size-base a-color-base">
+                <a href="/amazon2">Hardcover</a>
+              </div>
+              <div class="a-row a-size-base a-color-base">
+                <span class="a-price">
+                  <span class="a-offscreen">£3.50</span>
+                </span>
+              </div>
             </div>
+            <div data-cy="secondary-offer-recipe">New</div>
           </div>
           </body></html>
         `,
