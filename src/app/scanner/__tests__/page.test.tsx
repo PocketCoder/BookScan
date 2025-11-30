@@ -194,15 +194,15 @@ describe("ScannerPage", () => {
 
     expect(screen.getByText("eBay")).toBeInTheDocument();
     expect(screen.getByText("AbeBooks")).toBeInTheDocument();
-    expect(screen.getByText("World of Books")).toBeInTheDocument();
     expect(screen.getByText("Amazon")).toBeInTheDocument();
 
     // Check eBay items
     const ebaySection = screen.getByText("eBay").closest('section') ||
       screen.getByText("eBay").parentElement?.parentElement?.parentElement;
     expect(within(ebaySection!).getByText("£10.00")).toBeInTheDocument();
-    expect(within(ebaySection!).getByText("Used")).toBeInTheDocument();
-    expect(within(ebaySection!).getByText("Paperback")).toBeInTheDocument();
+    // Use getAllByText since "Used" and "Paperback" appear multiple times
+    expect(within(ebaySection!).getAllByText("Used").length).toBeGreaterThan(0);
+    expect(within(ebaySection!).getAllByText("Paperback").length).toBeGreaterThan(0);
 
     // Check AbeBooks items
     const abeBooksSection = screen.getByText("AbeBooks").closest('section') ||

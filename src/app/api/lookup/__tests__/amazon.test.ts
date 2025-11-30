@@ -56,14 +56,42 @@ const createMockRequest = (barcode: string | null) => {
 };
 
 describe("Amazon Scraper", () => {
-  let amazonHtmlContent: string;
-
-  beforeAll(() => {
-    amazonHtmlContent = fs.readFileSync(
-      path.resolve(process.cwd(), "typical/amazon.html"),
-      "utf-8",
-    );
-  });
+  const amazonHtmlContent = `
+    <html><body>
+    <div class="s-result-item" data-asin="1">
+      <h2 class="a-size-medium a-text-normal">
+        <a class="a-link-normal a-text-normal" href="/book1">Test Book 1</a>
+      </h2>
+      <div data-cy="price-recipe">
+        <div class="a-row a-spacing-mini a-size-base a-color-base">
+          <a href="/book1">Hardcover</a>
+        </div>
+        <div class="a-row a-size-base a-color-base">
+          <span class="a-price">
+            <span class="a-offscreen">£10.00</span>
+          </span>
+        </div>
+      </div>
+      <div data-cy="secondary-offer-recipe">New</div>
+    </div>
+    <div class="s-result-item" data-asin="2">
+      <h2 class="a-size-medium a-text-normal">
+        <a class="a-link-normal a-text-normal" href="/book2">Test Book 2</a>
+      </h2>
+      <div data-cy="price-recipe">
+        <div class="a-row a-spacing-mini a-size-base a-color-base">
+          <a href="/book2">Paperback</a>
+        </div>
+        <div class="a-row a-size-base a-color-base">
+          <span class="a-price">
+            <span class="a-offscreen">£8.50</span>
+          </span>
+        </div>
+      </div>
+      <div data-cy="secondary-offer-recipe">Used - Good</div>
+    </div>
+    </body></html>
+  `;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -79,15 +107,25 @@ describe("Amazon Scraper", () => {
   });
 
   it("should correctly scrape format and condition from Amazon", async () => {
-    const request = createMockRequest("1800818025"); // Use a dummy barcode
+    const request = createMockRequest("1800818025");
     const response = await GET(request);
     const json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.amazon.items).toHaveLength(2); // Found 2 items in the mock HTML
+    expect(json.amazon.items).toHaveLength(2);
 
-    const amazonItem = json.amazon.items[0];
-    expect(amazonItem.format).toBe("Hardcover");
-    expect(amazonItem.quality).toBe("New");
+    expect(json.amazon.items[0]).toEqual({
+      price: 8.5,
+      link: "https://www.amazon.co.uk/book2",
+      format: "Paperback",
+      quality: "Used - Good",
+    });
+
+    expect(json.amazon.items[1]).toEqual({
+      price: 10.0,
+      link: "https://www.amazon.co.uk/book1",
+      format: "Hardcover",
+      quality: "New",
+    });
   });
 });

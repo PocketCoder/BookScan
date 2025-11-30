@@ -64,6 +64,29 @@ const load = (html) => {
 
         wrapperObj.first = () => createCheerioWrapper(els.slice(0, 1));
 
+        wrapperObj.next = (selector) => {
+            const nextElements = [];
+            els.forEach(el => {
+                let next = el.nextElementSibling;
+                if (next) {
+                    if (selector) {
+                        // Check if next element matches the selector
+                        if (next.matches && next.matches(selector)) {
+                            nextElements.push(next);
+                        }
+                    } else {
+                        nextElements.push(next);
+                    }
+                }
+            });
+            return createCheerioWrapper(nextElements);
+        };
+
+        wrapperObj.eq = (index) => {
+            if (index < 0 || index >= els.length) return createCheerioWrapper([]);
+            return createCheerioWrapper([els[index]]);
+        };
+
         return wrapperObj;
     };
 
